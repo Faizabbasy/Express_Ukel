@@ -64,7 +64,6 @@ module.exports = {
 
     showItem: async (req, res) => {
         try {
-            // req.params buat ngambil parameter routes
             const { id } = req.params;
 
             const item = await Category.findByPk(id);
@@ -126,19 +125,17 @@ module.exports = {
         try {
             const { id } = req.params;
 
-            // 1. Cari data kategori berdasarkan ID untuk mengambil nama file gambarnya
             const item = await Category.findByPk(id);
             if (!item) {
                 return res.status(404).json(response(404, 'Data kategori tidak ditemukan'));
             }
 
-            // 2. Proses Hapus File Gambar Fisik dari folder 'uploads' agar penyimpanan tidak penuh
-            const rawImageName = item.getDataValue('image'); // Mengambil nama file asli (tanpa prefix http)
+            const rawImageName = item.getDataValue('image'); 
             if (rawImageName) {
                 const filePath = path.join(process.cwd(), 'uploads', rawImageName);
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath); // Menghapus file gambar
-                    console.log(`✅ Gambar ${rawImageName} berhasil dihapus dari server`);
+                    console.log(` Gambar ${rawImageName} berhasil dihapus dari server`);
                 }
             }
 

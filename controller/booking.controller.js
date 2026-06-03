@@ -84,7 +84,7 @@ module.exports = {
             await booking.destroy();
 
 
-            return res.status(200).json(response(200, `Booking ID ${id} berhasil dibatalkan/dihapus.`));
+            return res.status(200).json(response(200, `Booking ID berhasil dibatalkan/dihapus.`));
 
         } catch (error) {
             return res.status(500).json(response(500, 'server error saat membatalkan', error.message));

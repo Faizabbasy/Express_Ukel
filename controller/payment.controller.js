@@ -96,7 +96,7 @@ module.exports = {
     confirmPayment: async (req, res) => {
         try {
             const { id } = req.params;
-            const { status } = req.body; // Menerima 'paid' atau 'rejected' dari frontend
+            const { status } = req.body; 
 
             const statusFix = status.toLowerCase();
 
@@ -107,7 +107,7 @@ module.exports = {
 
             payment.status = statusFix;
             await payment.save();
-            console.log(`Tabel Payments ID #${id} berhasil diubah menjadi: ${statusFix}`);
+            console.log(`Tabel Payments berhasil diubah menjadi`);
 
             const idBookingAsli = payment.booking_id || payment.bookingId;
             if (idBookingAsli) {
@@ -116,9 +116,9 @@ module.exports = {
                     if (booking) {
                         booking.status = statusFix;
                         await booking.save();
-                        console.log(` SKSES SINKRON: Booking #${idBookingAsli} ikut berstatus ${statusFix} ===`);
+                        console.log(` Booking berstatus ${statusFix}`);
                     } else {
-                        console.log(` WARNING: Booking ID #${idBookingAsli} tidak ditemukan ===`);
+                        console.log(`Booking ID #${idBookingAsli} tidak ditemukan `);
                     }
                 } catch (bookingError) {
                     console.log('Error', bookingError);
@@ -137,7 +137,6 @@ module.exports = {
 
     exportExcel: async (req, res) => {
         try {
-            // 1. Ambil data transaksi lengkap dengan include data Booking-nya
             const payments = await Payment.findAll({
                 include: [
                     {
@@ -147,7 +146,6 @@ module.exports = {
                 order: [['id', 'DESC']] 
             });
 
-            // Inisialisasi Excel
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Riwayat Transaksi');
 
@@ -161,18 +159,15 @@ module.exports = {
                 { header: 'Status Transaksi', key: 'status', width: 18 }
             ];
 
-            // 4. Desain Header Tabel (Warna Biru Navy Elegan)
             worksheet.getRow(1).font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFF' } };
             worksheet.getRow(1).fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: '1E3A8A' } // Navy Blue Hex
+                fgColor: { argb: '1E3A8A' } 
             };
             worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-            // 5. Looping Data Gabungan ke dalam Baris Excel
             payments.forEach((item, index) => {
-                // Ambil data total_price dari tabel Booking jika relasinya aman
                 const hargaTotal = item.Booking ? item.Booking.total_price : 0;
 
                 const row = worksheet.addRow({
@@ -185,10 +180,8 @@ module.exports = {
                     status: item.status ? item.status.toUpperCase() : 'PENDING'
                 });
 
-                // Format mata uang Rupiah untuk kolom Total Harga (Kolom ke-6)
                 row.getCell(6).numFmt = '"Rp"#,##0';
 
-                // Alignment data biar rapi tengah/kiri
                 row.getCell(1).alignment = { horizontal: 'center' };
                 row.getCell(2).alignment = { horizontal: 'center' };
                 row.getCell(3).alignment = { horizontal: 'center' };
@@ -196,7 +189,6 @@ module.exports = {
                 row.getCell(7).alignment = { horizontal: 'center' };
             });
 
-            // 6. Set Header HTTP Browser untuk File Unduhan Excel asli
             res.setHeader(
                 'Content-Type',
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -206,12 +198,11 @@ module.exports = {
                 'attachment; filename=' + `Laporan_Transaksi_${Date.now()}.xlsx`
             );
 
-            // 7. Write and send file
             await workbook.xlsx.write(res);
             return res.end();
 
         } catch (error) {
-            console.error("🚨 Gagal Export Excel Transaksi:", error);
+            console.error(" Gagal Export Excel Transaksi:", error);
             return res.status(500).json(response(500, 'Gagal export riwayat transaksi ke Excel', error.message));
         }
     }

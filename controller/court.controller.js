@@ -12,42 +12,36 @@ module.exports = {
         try {
             const { category_id, nameCourt, price, status } = req.body;
 
-            // 1. PENCEGAHAN AWAL: Cek apakah file upload ada atau tidak
             if (!req.file) {
                 return res.status(400).json(response(400, 'gambar tidak boleh kosong'));
             }
 
-            // 2. Schema Validasi (Sertakan image agar sinkron)
             const schema = {
                 category_id: { type: "number", positive: true, integer: true },
                 nameCourt: { type: "string", min: 3 },
                 price: { type: "number", positive: true, integer: true },
                 status: { type: "enum", values: ["available", "maintenance", "non-active"], optional: true },
-                image: { type: "string", min: 1 } // 🆕 Validasi string nama file gambar
+                image: { type: "string", min: 1 } 
             }
 
-            // 3. Susun Data (Aman dari crash karena req.file sudah pasti ada)
             const data = {
                 category_id: Number(category_id),
                 nameCourt: nameCourt,
                 price: Number(price),
                 status: status || "available", 
-                image: req.file.filename // Mengambil nama file yang disimpan Multer
+                image: req.file.filename 
             }
 
-            // 4. Jalankan fastest-validator
             const validate = v.validate(data, schema);
             if (validate.length > 0) {
                 return res.status(400).json(response(400, 'error validasi', validate));
             }
 
-            // 5. Cek data category_id di tabel category
             const categoryCheck = await Category.findByPk(data.category_id);
             if (!categoryCheck) {
                 return res.status(404).json(response(404, 'Category not found'));
             }
 
-            // 6. Proses buat data ke MySQL
             const createProcess = await Court.create(data);
 
             return res.status(201).json(response(201, 'created', createProcess));
@@ -101,7 +95,7 @@ module.exports = {
                 category_id: Number(category_id),
                 nameCourt: nameCourt,
                 price: Number(price),
-                status: status ? String(status).trim() : undefined // Jika status tidak diberikan, tetap gunakan status lama
+                status: status ? String(status).trim() : undefined 
             }
             const validate = v.validate(data, schema);
             if (validate.length > 0) {
