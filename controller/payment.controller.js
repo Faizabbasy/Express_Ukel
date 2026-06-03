@@ -25,30 +25,25 @@ module.exports = {
                 return res.status(400).json(response(400, 'Error validasi data', validate));
             }
 
-            // Cek apakah data booking-nya eksis
             const bookingCheck = await Booking.findByPk(dataToValidate.booking_id);
             if (!bookingCheck) {
                 return res.status(404).json(response(404, 'Data Booking tidak ditemukan'));
             }
 
-            // Siapkan objek data untuk disimpan ke MySQL
             const paymentData = {
                 booking_id: dataToValidate.booking_id,
                 payment_method: dataToValidate.payment_method,
                 payment_date: new Date(),
-                status: 'pending' // Default awal
+                status: 'pending'   
             };
 
-            // PERGABUNGAN LOGIKA TRANSFER VS QRIS
             if (dataToValidate.payment_method === 'transfer') {
-                // Jika transfer, WAJIB upload file bukti tf
                 if (!req.file) {
                     return res.status(400).json(response(400, 'Bukti transfer wajib diunggah jika memilih metode Transfer!'));
                 }
                 paymentData.payment_proof = req.file.filename;
-                paymentData.status = 'pending'; // Harus di-approve admin manual
+                paymentData.status = 'pending'; 
             } else if (dataToValidate.payment_method === 'qris') {
-                // Jika QRIS, tidak butuh file upload, status diasumsikan langsung lunas (paid)
                 paymentData.payment_proof = null;
                 paymentData.status = 'paid';
             }
@@ -86,7 +81,6 @@ module.exports = {
         }
     },
 
-    // 3. GET ALL PAYMENTS FOR ADMIN DASHBOARD
     getAllPayments: async (req, res) => {
         try {
             const payments = await Payment.findAll({
@@ -104,47 +98,38 @@ module.exports = {
             const { id } = req.params;
             const { status } = req.body; // Menerima 'paid' atau 'rejected' dari frontend
 
-            // 🌟 Samakan persis dengan isi ENUM database abang (huruf kecil penuh)
             const statusFix = status.toLowerCase();
 
-            // 1. Ambil data payment berdasarkan ID
             const payment = await Payment.findByPk(id);
             if (!payment) {
-                return res.status(404).json(response(404, `Data pembayaran dengan ID #${id} tidak ditemukan`));
+                return res.status(404).json(response(404, `Data pembayaran tidak ditemukan`));
             }
 
-            // 2. Update status tabel Payments terlebih dahulu
             payment.status = statusFix;
             await payment.save();
-            console.log(`✅ Tabel Payments ID #${id} berhasil diubah menjadi: ${statusFix}`);
+            console.log(`Tabel Payments ID #${id} berhasil diubah menjadi: ${statusFix}`);
 
-            // 3. SINKRONISASI KE TABEL BOOKING YANG AMAN (Dibungkus try-catch terpisah)
             const idBookingAsli = payment.booking_id || payment.bookingId;
             if (idBookingAsli) {
                 try {
                     const booking = await Booking.findByPk(idBookingAsli);
                     if (booking) {
-                        // Kita coba set ke huruf kecil. Jika tabel booking ternyata ENUM-nya beda, 
-                        // catch internal akan menangkapnya tanpa membuat rute payment ikut crash 500!
                         booking.status = statusFix;
                         await booking.save();
-                        console.log(`=== ✅ SKSES SINKRON: Booking #${idBookingAsli} ikut berstatus ${statusFix} ===`);
+                        console.log(` SKSES SINKRON: Booking #${idBookingAsli} ikut berstatus ${statusFix} ===`);
                     } else {
-                        console.log(`=== ⚠️ WARNING: Booking ID #${idBookingAsli} tidak ditemukan ===`);
+                        console.log(` WARNING: Booking ID #${idBookingAsli} tidak ditemukan ===`);
                     }
                 } catch (bookingError) {
-                    console.log(`=== 🚨 GAGAL SINKRON TABEL BOOKING: ${bookingError.message} ===`);
-                    console.log(`Kemungkinan kolom status di tabel booking isi ENUM-nya berbeda dengan tabel payment.`);
+                    console.log('Error', bookingError);
                 }
             }
 
-            // Return sukses bawaan formatter abang
             return res.status(200).json(response(200, `Pembayaran berhasil diperbarui menjadi ${statusFix.toUpperCase()}`, payment));
 
         } catch (error) {
-            console.log("\n=========== 🚨 DETAIL ERROR SYSTEM 500 🚨 ===========");
+            console.log("Error");
             console.error(error);
-            console.log("=====================================================\n");
 
             return res.status(500).json(response(500, `Server error saat konfirmasi: ${error.message}`, null));
         }
@@ -157,10 +142,6 @@ module.exports = {
                 include: [
                     {
                         model: Booking,
-                        // include: [
-                        //     { model: User, attributes: ['name', 'email'] },
-                        //     { model: Court, attributes: ['nameCourt'] }
-                        // ]
                     }
                 ],
                 order: [['id', 'DESC']] 
@@ -170,7 +151,6 @@ module.exports = {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Riwayat Transaksi');
 
-            // Setup Kolom Tabel Excel
             worksheet.columns = [
                 { header: 'No', key: 'no', width: 8 },
                 { header: 'ID Payment', key: 'id', width: 12 },

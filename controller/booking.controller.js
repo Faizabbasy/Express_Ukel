@@ -73,22 +73,16 @@ module.exports = {
 
     cancelBooking: async (req, res) => {
         try {
-            const { id } = req.params; // Mengambil ID (seperti 20, 21) dari URL
+            const { id } = req.params; 
 
-            // Ambil data booking berdasarkan ID
             const booking = await Booking.findByPk(id);
 
-            // Jika data booking tidak ditemukan di database, lemparkan error 404
             if (!booking) {
                 return res.status(404).json(response(404, `Data booking dengan ID ${id} tidak ditemukan!`));
             }
 
-            // Pilihan A: Jika sistem abang menghapus permanen datanya dari MySQL
             await booking.destroy();
 
-            // Pilihan B: Jika sistem abang hanya mengubah status jadi 'canceled' (Ganti baris destroy jika pakai ini)
-            // booking.status = 'canceled';
-            // await booking.save();
 
             return res.status(200).json(response(200, `Booking ID ${id} berhasil dibatalkan/dihapus.`));
 
@@ -103,7 +97,7 @@ module.exports = {
 
             return res.status(200).json(response(200, 'Berhasil memuat semua data booking', dataBookings));
         } catch (error) {
-            return res.status(500).json(response(500, 'Server error saat mengambil data booking', error.message));
+            return res.status(500).json(response(500, 'Server error', error.message));
         }
     },
 
@@ -112,9 +106,10 @@ module.exports = {
             const { id } = req.params;
             const { status } = req.body;
 
-            // Validasi input status dasar
-            if (!status) {
-                return res.status(400).json(response(400, 'Status harus diisi!'));
+            const allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+
+            if (!status || !allowedStatuses.includes(status.toLowerCase())) {
+                return res.status(400).json(response(400, `Status tidak valid. Harus salah satu dari: ${allowedStatuses.join(', ')}`));
             }
 
             const booking = await Booking.findByPk(id);
@@ -122,8 +117,7 @@ module.exports = {
                 return res.status(404).json(response(404, 'Data booking tidak ditemukan'));
             }
 
-            // Update status di database
-            booking.status = status;
+            booking.status = status.toLowerCase();
             await booking.save();
 
             return res.status(200).json(response(200, `Status booking berhasil diubah menjadi ${status}`, booking));
@@ -132,5 +126,5 @@ module.exports = {
         }
     },
 
-    
+
 }
