@@ -106,10 +106,10 @@ module.exports = {
             const { id } = req.params;
             const { status } = req.body;
 
-            const allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+            const allowedStatuses = ['pending', 'confirmed', 'cancelled'];
 
             if (!status || !allowedStatuses.includes(status.toLowerCase())) {
-                return res.status(400).json(response(400, `Status tidak valid. Harus salah satu dari: ${allowedStatuses.join(', ')}`));
+                return res.status(400).json(response(400, 'Status tidak valid. Harus salah satu dari'));
             }
 
             const booking = await Booking.findByPk(id);
@@ -120,7 +120,7 @@ module.exports = {
             booking.status = status.toLowerCase();
             await booking.save();
 
-            return res.status(200).json(response(200, `Status booking berhasil diubah menjadi ${status}`, booking));
+            return res.status(200).json(response(200, 'Status booking berhasil diubah ', booking));
         } catch (error) {
             return res.status(500).json(response(500, 'Server error saat update status', error.message));
         }

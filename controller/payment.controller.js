@@ -102,7 +102,7 @@ module.exports = {
 
             const payment = await Payment.findByPk(id);
             if (!payment) {
-                return res.status(404).json(response(404, `Data pembayaran tidak ditemukan`));
+                return res.status(404).json(response(404, 'Data pembayaran tidak ditemukan'));
             }
 
             payment.status = statusFix;
@@ -146,8 +146,8 @@ module.exports = {
                 order: [['id', 'DESC']] 
             });
 
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('Riwayat Transaksi');
+            const workbook = new ExcelJS.Workbook(); //keseluruhan file excel
+            const worksheet = workbook.addWorksheet('Riwayat Transaksi'); //sheet di dalem file excel
 
             worksheet.columns = [
                 { header: 'No', key: 'no', width: 8 },
@@ -177,7 +177,7 @@ module.exports = {
                     payment_method: item.payment_method ? item.payment_method.toUpperCase() : '-',
                     payment_date: item.payment_date,
                     total_price: hargaTotal,
-                    status: item.status ? item.status.toUpperCase() : 'PENDING'
+                    status: item.status ? item.status.toUpperCase() : ''
                 });
 
                 row.getCell(6).numFmt = '"Rp"#,##0';
@@ -190,11 +190,11 @@ module.exports = {
             });
 
             res.setHeader(
-                'Content-Type',
+                'Content-Type', // ngasi tau browser ini file excell
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             );
             res.setHeader(
-                'Content-Disposition',
+                'Content-Disposition', // buat maksa browser download file 
                 'attachment; filename=' + `Laporan_Transaksi_${Date.now()}.xlsx`
             );
 
